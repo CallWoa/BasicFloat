@@ -34,7 +34,7 @@ int main(int argc, char* argv[]) {
     uint64_t cnt = 0;
     uint64_t error = 0;
 
-    module.io_rm = rm;
+    module.io_roundingMode = rm;
     while(scanf("%lx %lx %lx %lx", &a, &b, &ref_result, &ref_fflags) != EOF){
         module.io_a = a;
         module.io_b = b;

@@ -1,7 +1,8 @@
-package fudian
+package fudian.utils
 
 import chisel3._
 import chisel3.util._
+import fudian._
 
 class RoundingUnit(val width: Int) extends Module {
   val io = IO(new Bundle() {
@@ -53,4 +54,25 @@ object RoundingUnit {
   def is_rmin(rm: UInt, sign: Bool): Bool = {
     rm === RTZ || (rm === RDN && !sign) || (rm === RUP && sign)
   }
+}
+
+class TininessRounder(expWidth: Int, sigWidth: Int) extends Module {
+
+  val io = IO(new Bundle() {
+    val in = Input(new RawFloat(expWidth, sigWidth + 3))
+    val rm = Input(UInt(3.W))
+    val tininess = Output(Bool())
+  })
+
+  val rounder = RoundingUnit(
+    io.in.sig.tail(2),
+    io.rm,
+    io.in.sign,
+    sigWidth - 1
+  )
+
+  val tininess = io.in.sig.head(2) === "b00".U(2.W) ||
+    (io.in.sig.head(2) === "b01".U(2.W) && !rounder.io.cout)
+
+  io.tininess := tininess
 }

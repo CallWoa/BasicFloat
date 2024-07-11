@@ -3,17 +3,17 @@ package fudian
 import chisel3._
 import chisel3.util._
 
-class FCMP(val expWidth: Int, val precision: Int) extends Module {
+class FCMP(val expWidth: Int, val sigWidth: Int) extends Module {
   val io = IO(new Bundle() {
-    val a, b = Input(UInt((expWidth + precision).W))
+    val a, b = Input(UInt((expWidth + sigWidth).W))
     val signaling = Input(Bool())
     val eq, le, lt = Output(Bool())
     val fflags = Output(UInt(5.W))
   })
 
   val (a, b) = (io.a, io.b)
-  val fp_a = FloatPoint.fromUInt(a, expWidth, precision)
-  val fp_b = FloatPoint.fromUInt(b, expWidth, precision)
+  val fp_a = FloatPoint.fromUInt(a, expWidth, sigWidth)
+  val fp_b = FloatPoint.fromUInt(b, expWidth, sigWidth)
   val decode_a = fp_a.decode
   val decode_b = fp_b.decode
 

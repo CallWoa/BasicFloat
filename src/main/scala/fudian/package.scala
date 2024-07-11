@@ -23,11 +23,10 @@ package object fudian {
     val isQNaN = Bool()
   }
 
-  class FloatPoint(val expWidth: Int, val precision: Int) extends Bundle {
-    def sigWidth = precision - 1
+  class FloatPoint(val expWidth: Int, val sigWidth: Int) extends Bundle {
     val sign = Bool()
     val exp = UInt(expWidth.W)
-    val sig = UInt(sigWidth.W)
+    val sig = UInt((sigWidth - 1).W)
     def decode: FPDecodeBundle = {
       val expNotZero = exp.orR
       val expIsOnes = exp.andR
@@ -54,36 +53,42 @@ package object fudian {
     def maxNormExp(expWidth: Int): BigInt = {
       (BigInt(1) << expWidth) - 2
     }
-    def fromUInt(x: UInt, expWidth: Int, pc: Int): FloatPoint = {
-      val fp = Wire(new FloatPoint(expWidth, pc))
-      fp.sign := x(expWidth + pc - 1)
-      fp.exp := x(expWidth + pc - 2, pc - 1)
-      fp.sig := x(pc - 2, 0)
+    def fromUInt(x: UInt, expWidth: Int, sigWidth: Int): FloatPoint = {
+      val fp = Wire(new FloatPoint(expWidth, sigWidth))
+      fp.sign := x(expWidth + sigWidth - 1)
+      fp.exp := x(expWidth + sigWidth - 2, sigWidth - 1)
+      fp.sig := x(sigWidth - 2, 0)
       fp
     }
-    def defaultNaNUInt(expWidth: Int, pc: Int): UInt = {
-      Cat(0.U(1.W), Fill(expWidth + 1, 1.U(1.W)), 0.U((pc - 2).W))
-    }
-    def defaultNaN(expWidth: Int, pc: Int): FloatPoint = {
-      fromUInt(defaultNaNUInt(expWidth, pc), expWidth, pc)
-    }
+    //    def defaultNaNUInt(expWidth: Int, pc: Int): UInt = {
+    //      Cat(0.U(1.W), Fill(expWidth + 1, 1.U(1.W)), 0.U((pc - 2).W))
+    //    }
+    //    def defaultNaN(expWidth: Int, pc: Int): FloatPoint = {
+    //      fromUInt(defaultNaNUInt(expWidth, pc), expWidth, pc)
+    //    }
   }
 
-  class RawFloat(val expWidth: Int, val precision: Int) extends Bundle {
+  class RawFloat(val expWidth: Int, val sigWidth: Int) extends Bundle {
     val sign = Bool()
     val exp = UInt(expWidth.W)
-    val sig = UInt(precision.W)
+    val sig = UInt(sigWidth.W)
   }
 
   object RawFloat {
-    def fromFP(fp: FloatPoint, expNotZero: Option[Bool] = None): RawFloat = {
-      val inner = Wire(new RawFloat(fp.expWidth, fp.precision))
-      val nz = if (expNotZero.isDefined) expNotZero.get else fp.exp.orR
+    def fromFP(fp: FloatPoint, expNotZero: Option[Bool] = None, isSubnormal: Option[Bool] = None): RawFloat = {
+      val inner = Wire(new RawFloat(fp.expWidth, fp.sigWidth))
+      val expNZ = if (expNotZero.isDefined) expNotZero.get else fp.exp.orR
+      val isSub = if (isSubnormal.isDefined) isSubnormal.get else fp.sig.orR & (!fp.exp.orR)
       inner.sign := fp.sign
-      inner.exp := fp.exp | !nz
-      inner.sig := Cat(nz, fp.sig)
+      inner.exp := Mux(isSub, fp.exp + 1.U, fp.exp)
+      inner.sig := Cat(expNZ, fp.sig)
       inner
     }
-  }
 
+    def fromUInt(x: UInt, expWidth: Int, sigWidth: Int): RawFloat = {
+      val fp = FloatPoint.fromUInt(x, expWidth, sigWidth)
+      val raw = fromFP(fp)
+      raw
+    }
+  }
 }

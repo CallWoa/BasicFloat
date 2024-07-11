@@ -35,7 +35,7 @@ int main(int argc, char* argv[]) {
     module.clock = 1;
     module.eval();
 
-    uint64_t a, ref_result, ref_fflags;
+    uint64_t in, ref_result, ref_fflags;
     uint64_t dut_result, dut_fflags;
 
     uint64_t cnt = 0;
@@ -43,8 +43,8 @@ int main(int argc, char* argv[]) {
 
     module.io_rm = rm;
     module.io_op = op;
-    while(scanf("%lx %lx %lx", &a, &ref_result, &ref_fflags) != EOF){
-        module.io_a = a;
+    while(scanf("%lx %lx %lx", &in, &ref_result, &ref_fflags) != EOF){
+        module.io_in = in;
         module.clock = 0;
         module.eval();
         module.clock = 1;
@@ -52,7 +52,7 @@ int main(int argc, char* argv[]) {
         dut_result = module.io_result;
         dut_fflags = module.io_fflags;
         if( (dut_result != ref_result || dut_fflags != ref_fflags) ){
-            printf("[%ld] input: %lx\n", cnt, a);
+            printf("[%ld] input: %lx\n", cnt, in);
             printf("[%ld] dut_result: %lx dut_fflags: %lx\n", cnt, dut_result, dut_fflags);
             printf("[%ld] ref_result: %lx ref_fflags: %lx\n", cnt, ref_result, ref_fflags);
             error++;

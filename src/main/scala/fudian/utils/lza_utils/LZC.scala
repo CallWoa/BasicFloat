@@ -1,10 +1,9 @@
-package fudian.utils
+package fudian.utils.lza_utils
 
 import chisel3._
 import chisel3.util._
-import chisel3.util.experimental.decode._
 
-class CLZ(len: Int, zero: Boolean) extends Module {
+class LZC(len: Int, zero: Boolean) extends Module {
 
   val inWidth = len
   val outWidth = (inWidth - 1).U.getWidth
@@ -17,11 +16,11 @@ class CLZ(len: Int, zero: Boolean) extends Module {
   io.out := PriorityEncoder(io.in.asBools.reverse)
 }
 
-object CLZ {
+object LZC {
   def apply(value: UInt): UInt = {
-    val clz = Module(new CLZ(value.getWidth, true))
-    clz.io.in := value
-    clz.io.out
+    val lzc = Module(new LZC(value.getWidth, true))
+    lzc.io.in := value
+    lzc.io.out
   }
   def apply(xs: Seq[Bool]): UInt = {
     apply(Cat(xs.reverse))
